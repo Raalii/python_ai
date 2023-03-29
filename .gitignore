@@ -3,3 +3,5 @@ yolov4-tiny.weights
 coco.names
 .env
 output.avi
+videos
+*/__pycache__

@@ -1,0 +1,104 @@
+import cv2
+import numpy as np
+from lib.lib import Lib
+from camera.CameraRecorder import CameraRecorder
+import datetime
+
+class PersonDetector:
+    def __init__(self, weights_path, config_path, names_path, confidence_threshold=0.5, nms_threshold=0.4):
+        self.net = cv2.dnn.readNet(weights_path, config_path)
+        self.layer_names = self.net.getLayerNames()
+
+        frame_size = (1920, 1080)
+        # Créez un horodatage unique
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+        # Créez le nom de fichier avec l'horodatage
+        filename = f"video_{timestamp}.mov"
+
+        self.camera_recorder = CameraRecorder(filename, 10, frame_size)
+
+        self.output_layers = [self.layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
+
+        with open(names_path, "r") as f:
+            self.classes = [line.strip() for line in f.readlines()]
+
+        self.confidence_threshold = confidence_threshold
+        self.nms_threshold = nms_threshold
+        self.polygons = [
+            [(0, 0), (0, 1080), (1920, 1080), (1920, 0)],
+        ]
+
+    
+    def detect_persons_in_polygons(self, frame):
+        height, width, _ = frame.shape
+        blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+
+        self.net.setInput(blob)
+        layer_outputs = self.net.forward(self.output_layers)
+
+        class_ids = []
+        confidences = []
+        boxes = []
+
+        for output in layer_outputs:
+            for detection in output:
+                scores = detection[5:]
+                class_id = np.argmax(scores)
+                confidence = scores[class_id]
+                if confidence > self.confidence_threshold:
+                    center_x, center_y, w, h = (detection[0:4] * np.array([width, height, width, height])).astype('int')
+                    x = int(center_x - w / 2)
+                    y = int(center_y - h / 2)
+                    boxes.append([x, y, w, h])
+                    confidences.append(float(confidence))
+                    class_ids.append(class_id)
+
+        indexes = cv2.dnn.NMSBoxes(boxes, confidences, self.confidence_threshold, self.nms_threshold)
+
+
+        person_in_polygons = False
+        for i in range(len(boxes)):
+            if i in indexes:
+                x, y, w, h = boxes[i]
+                label = str(self.classes[class_ids[i]])
+                if label == "person":
+                    if self.polygons:
+                        for polygon in self.polygons:
+                            if self.point_inside_polygon(x + w // 2, y + h // 2, polygon):
+                                person_in_polygons = True
+                                label = str(self.classes[class_ids[i]])
+                                confidence = confidences[i]
+                                color = (0, 0, 255)  # Rouge pour les personnes à l'intérieur du polygone
+                                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+                                cv2.putText(frame, f"{label} {int(confidence * 100)}%", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                                # print(f"{label} {int(confidence * 100)}%")
+                                # TODO : Optimiser l'actualisation
+                                # Lib.send_sms("Une personne a été détécté sur la caméra numéro 5, n'hésitez pas à aller regarder votre oncle")
+                                
+        
+        self.camera_recorder.handle_recording(frame, person_in_polygons)
+
+                            
+        return frame
+
+    def point_inside_polygon(self, x, y, poly):
+        n = len(poly)
+        inside = False
+        p1x, p1y = poly[0]
+        for i in range(n + 1):
+            p2x, p2y = poly[i % n]
+            if y > min(p1y, p2y):
+                if y <= max(p1y, p2y):
+                    if x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            x_intersection = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= x_intersection:
+                            inside = not inside
+            p1x, p1y = p2x, p2y
+        return inside
+
+    def draw_detection_zone(self, image, points, color=(0, 255, 0), thickness=2):
+        pts = np.array(points, np.int32)
+        pts = pts.reshape((-1, 1, 2))
+        return cv2.polylines(image, [pts], True, color, thickness)
