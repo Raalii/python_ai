@@ -1,8 +1,10 @@
+import datetime
+
 import cv2
 import numpy as np
-from lib.lib import Lib
 from camera.CameraRecorder import CameraRecorder
-import datetime
+from lib.lib import Lib
+
 
 class PersonDetector:
     def __init__(self, weights_path, config_path, names_path, confidence_threshold=0.5, nms_threshold=0.4):
@@ -14,23 +16,20 @@ class PersonDetector:
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
         # Créez le nom de fichier avec l'horodatage
-        filename = f"video_{timestamp}.mov"
+        filename = f"./videos/video_{timestamp}.mov"
 
         self.camera_recorder = CameraRecorder(filename, 10, frame_size)
 
         self.output_layers = [self.layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
-
+        
         with open(names_path, "r") as f:
             self.classes = [line.strip() for line in f.readlines()]
 
         self.confidence_threshold = confidence_threshold
         self.nms_threshold = nms_threshold
-        self.polygons = [
-            [(0, 0), (0, 1080), (1920, 1080), (1920, 0)],
-        ]
 
     
-    def detect_persons_in_polygons(self, frame):
+    def detect_persons_in_polygons(self, frame, polygons):
         height, width, _ = frame.shape
         blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
 
@@ -63,8 +62,8 @@ class PersonDetector:
                 x, y, w, h = boxes[i]
                 label = str(self.classes[class_ids[i]])
                 if label == "person":
-                    if self.polygons:
-                        for polygon in self.polygons:
+                    if polygons:
+                        for polygon in polygons:
                             if self.point_inside_polygon(x + w // 2, y + h // 2, polygon):
                                 person_in_polygons = True
                                 label = str(self.classes[class_ids[i]])

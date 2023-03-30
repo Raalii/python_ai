@@ -1,11 +1,16 @@
 from threading import Thread
+
 import cv2
 
+
 class CameraStream:
-    def __init__(self, src=0):
-        self.stream = cv2.VideoCapture(src)
+    def __init__(self, id, url, polygons):
+        self.stream = cv2.VideoCapture(url)
         self.ret, self.frame = self.stream.read()
         self.stopped = False
+        self.polygons = polygons
+        self.id = id
+    
 
     def start(self):
         thread_stream = Thread(target=self.update, args=())

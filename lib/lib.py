@@ -1,8 +1,8 @@
-import time
-from twilio.rest import Client
-from dotenv import load_dotenv
 import os
+import time
 
+from dotenv import load_dotenv
+from twilio.rest import Client
 
 load_dotenv()
 
@@ -35,5 +35,22 @@ class Lib():
                 )
         except:
             pass
+
+        
+    def convert_polygons(data):
+        converted_polygons = []
+        
+        for polygon in data["polygons"]:
+            converted_points = []
+            
+            for point in polygon["points"]:
+                converted_points.append(tuple(point))
+            
+            converted_polygons.append(converted_points)
+        
+        return converted_polygons
+
+
+
 
 
