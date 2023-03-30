@@ -21,7 +21,7 @@ class PersonDetector:
         self.camera_recorder = CameraRecorder(filename, 10, frame_size)
 
         self.output_layers = [self.layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
-        
+
         with open(names_path, "r") as f:
             self.classes = [line.strip() for line in f.readlines()]
 
@@ -73,7 +73,8 @@ class PersonDetector:
                                 cv2.putText(frame, f"{label} {int(confidence * 100)}%", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
                                 # print(f"{label} {int(confidence * 100)}%")
                                 # TODO : Optimiser l'actualisation
-                                # Lib.send_sms("Une personne a été détécté sur la caméra numéro 5, n'hésitez pas à aller regarder votre oncle")
+                                Lib.send_sms("Une personne a été détécté sur la caméra1 situé sur le hall 1 du salon de la tech.")
+
                                 
         
         self.camera_recorder.handle_recording(frame, person_in_polygons)

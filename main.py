@@ -15,10 +15,6 @@ load_dotenv()
 
 
 def main():
-    server = WebhookHandler()
-    webhook_server_thread = Thread(target=server.run)
-    webhook_server_thread.daemon = True
-    webhook_server_thread.start()
     api = StrapiClient(os.getenv("BASE_URL_API"))
     
     # Initialise la capture vidéo
@@ -29,10 +25,16 @@ def main():
     # TODO : gérer les classes pour utiliser plusieurs flux vidéos
     cap = CameraStream(api.cameras[0]["id"], api.cameras[0]["url"], Lib.convert_polygons(api.cameras[0]) ).start()
 
+
+    server = WebhookHandler(cap)
+    webhook_server_thread = Thread(target=server.run)
+    webhook_server_thread.daemon = True
+
+    webhook_server_thread.start()
     weights_path = "yolov4-tiny.weights"
     config_path = "yolov4-tiny.cfg"
     names_path = "coco.names"
-    print(cap.polygons)
+    print(server.strapi_webhook_handler.cameras.polygons)
     # Crée une instance de la classe PersonDetector
     person_detector = PersonDetector(weights_path, config_path, names_path)
     
@@ -41,8 +43,8 @@ def main():
 
     while True:
         start_time = time.time()
-        frame = person_detector.detect_persons_in_polygons(cap.read(), cap.polygons)
-        for polygon in cap.polygons:
+        frame = person_detector.detect_persons_in_polygons(server.strapi_webhook_handler.cameras.read(), server.strapi_webhook_handler.cameras.polygons)
+        for polygon in server.strapi_webhook_handler.cameras.polygons:
             frame = person_detector.draw_detection_zone(frame, polygon)
 
         Lib.maintain_fps(frame_time, start_time)    
