@@ -6,7 +6,7 @@ from lib.lib import Lib
 import cv2
 # Ajoutez cette ligne après la création de l'instance Flask
 class WebhookHandler:
-    def __init__(self,  cameras, host='192.168.1.152', port=3030):
+    def __init__(self,  cameras, host='192.168.1.110', port=3030):
         self.app = Flask(__name__)
         self.host = host
         self.port = port
@@ -61,8 +61,6 @@ class StrapiWebhookHandler:
         # except:
         #     pass
         
-
-
     def handle_delete(self, data):
         print("Delete event received:", data)
         # Traitez l'événement de suppression ici

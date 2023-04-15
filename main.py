@@ -15,15 +15,15 @@ load_dotenv()
 
 
 def main():
-    api = StrapiClient(os.getenv("BASE_URL_API"))
+    api_handler = StrapiClient(os.getenv("BASE_URL_API"))
     
     # Initialise la capture vidéo
-    print(api.cameras[0]["polygons"])   
-    print(api.cameras[0]["id"])
-    print(api.cameras[0]["url"])
+    print(api_handler.cameras[0]["polygons"])   
+    print(api_handler.cameras[0]["id"])
+    print(api_handler.cameras[0]["url"])
 
     # TODO : gérer les classes pour utiliser plusieurs flux vidéos
-    cap = CameraStream(api.cameras[0]["id"], api.cameras[0]["url"], Lib.convert_polygons(api.cameras[0]) ).start()
+    cap = CameraStream(api_handler.cameras[0]["id"], api_handler.cameras[0]["url"], Lib.convert_polygons(api_handler.cameras[0]) ).start()
 
 
     server = WebhookHandler(cap)
@@ -36,7 +36,7 @@ def main():
     names_path = "coco.names"
     print(server.strapi_webhook_handler.cameras.polygons)
     # Crée une instance de la classe PersonDetector
-    person_detector = PersonDetector(weights_path, config_path, names_path)
+    person_detector = PersonDetector(weights_path, config_path, names_path, api_handler)
     
     desired_fps = 20
     frame_time = 1.0 / desired_fps
@@ -54,6 +54,8 @@ def main():
 
 
     cap.release()
+    person_detector.camera_recorder.release()
+    api_handler.upload("./videos/video.mp4")
     cv2.destroyAllWindows()
 
 

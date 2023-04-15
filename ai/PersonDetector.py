@@ -7,18 +7,19 @@ from lib.lib import Lib
 
 
 class PersonDetector:
-    def __init__(self, weights_path, config_path, names_path, confidence_threshold=0.5, nms_threshold=0.4):
+    def __init__(self, weights_path, config_path, names_path, api_handler, confidence_threshold=0.5, nms_threshold=0.4):
         self.net = cv2.dnn.readNet(weights_path, config_path)
         self.layer_names = self.net.getLayerNames()
+        self.api_handler = api_handler
 
         frame_size = (1920, 1080)
         # Créez un horodatage unique
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
         # Créez le nom de fichier avec l'horodatage
-        filename = f"./videos/video_{timestamp}.mov"
+        filename = f"./videos/video.mp4"
 
-        self.camera_recorder = CameraRecorder(filename, 10, frame_size)
+        self.camera_recorder = CameraRecorder(filename, 10, frame_size, api_handler)
 
         self.output_layers = [self.layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
 
@@ -74,6 +75,7 @@ class PersonDetector:
                                 # print(f"{label} {int(confidence * 100)}%")
                                 # TODO : Optimiser l'actualisation
                                 Lib.send_sms("Une personne a été détécté sur la caméra1 situé sur le hall 1 du salon de la tech.")
+                            
 
                                 
         
