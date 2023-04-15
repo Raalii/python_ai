@@ -55,7 +55,7 @@ def main():
 
     cap.release()
     person_detector.camera_recorder.release()
-    api_handler.upload("./videos/video.mp4")
+    api_handler.upload(person_detector.camera_recorder.video_file_path) # ajoute l'enregistrement
     cv2.destroyAllWindows()
 
 
