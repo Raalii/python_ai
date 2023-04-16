@@ -54,7 +54,11 @@ class StrapiWebhookHandler:
         print("Update event received:", data)
         # Traitez l'événement de mise à jour ici
         print(data["entry"]["url"])
-        self.cameras.polygons = Lib.convert_polygons(data["entry"])
+        try:
+            self.cameras.polygons = Lib.convert_polygons(data["entry"])
+        except:
+            pass
+        
         self.cameras.stream = cv2.VideoCapture(data["entry"]["url"])
         
         # try:

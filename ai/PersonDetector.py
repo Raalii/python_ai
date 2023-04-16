@@ -4,20 +4,29 @@ import cv2
 import numpy as np
 from camera.CameraRecorder import CameraRecorder
 from lib.lib import Lib
+from ai.Alert import Alert
+import pygame
+
+
+pygame.mixer.init()  # Initialiser le module mixer de Pygame
+pygame.mixer.music.load('./sound/alert.mp3')  # Charger le fichier audio
 
 
 class PersonDetector:
-    def __init__(self, weights_path, config_path, names_path, api_handler, confidence_threshold=0.5, nms_threshold=0.4):
+    def __init__(self, weights_path, config_path, names_path, api_handler, cap, confidence_threshold=0.5, nms_threshold=0.4):
         self.net = cv2.dnn.readNet(weights_path, config_path)
         self.layer_names = self.net.getLayerNames()
         self.api_handler = api_handler
-
+        self.alert = None
+        self.cap = cap
+        self.person_detected = False
+        self.sound_played = False
         frame_size = (1920, 1080)
         # Créez un horodatage unique
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
         # Créez le nom de fichier avec l'horodatage
-        filename = f"./videos/video.mp4"
+        filename = f"./videos/video_{timestamp}.mp4"
 
         self.camera_recorder = CameraRecorder(filename, 10, frame_size, api_handler)
 
@@ -57,7 +66,7 @@ class PersonDetector:
         indexes = cv2.dnn.NMSBoxes(boxes, confidences, self.confidence_threshold, self.nms_threshold)
 
 
-        person_in_polygons = False
+        # person_in_polygons = False
         for i in range(len(boxes)):
             if i in indexes:
                 x, y, w, h = boxes[i]
@@ -66,7 +75,7 @@ class PersonDetector:
                     if polygons:
                         for polygon in polygons:
                             if self.point_inside_polygon(x + w // 2, y + h // 2, polygon):
-                                person_in_polygons = True
+                                # person_in_polygons = True
                                 label = str(self.classes[class_ids[i]])
                                 confidence = confidences[i]
                                 color = (0, 0, 255)  # Rouge pour les personnes à l'intérieur du polygone
@@ -75,12 +84,14 @@ class PersonDetector:
                                 # print(f"{label} {int(confidence * 100)}%")
                                 # TODO : Optimiser l'actualisation
                                 Lib.send_sms("Une personne a été détécté sur la caméra1 situé sur le hall 1 du salon de la tech.")
+                                # TODO : person detecté
+                                # instancier l'alerte et les infos ==> lancer alerte
                             
 
                                 
         
-        self.camera_recorder.handle_recording(frame, person_in_polygons)
-
+        self.camera_recorder.handle_recording(frame, self.person_detected)
+        self.alert_handler(self.cap.id, self.cap.url)
                             
         return frame
 
@@ -104,3 +115,25 @@ class PersonDetector:
         pts = np.array(points, np.int32)
         pts = pts.reshape((-1, 1, 2))
         return cv2.polylines(image, [pts], True, color, thickness)
+    
+
+    def alert_handler(self, camera_id, camera_url):
+            if self.person_detected:
+                # if not self.sound_played:
+                if self.alert is None:
+                    pygame.mixer.music.play(-1)  # Lancer le son en boucle
+                    self.sound_played = True
+                    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                    self.alert = Alert(camera_id, timestamp, self.api_handler)
+                    self.alert.lancer_alerte(camera_id, "person_detected", camera_url)
+
+            else:
+                if self.alert is not None and not self.camera_recorder.recording:
+                    self.sound_played = False
+                    pygame.mixer.music.stop()
+                    print("\n\n\n\nJE SUIS ICI")
+                    new_url = self.api_handler.upload(self.camera_recorder.video_file_path)[0]['url']
+                    self.alert.mettre_a_jour_url_camera(new_url)               
+                    self.alert = None
+
+        

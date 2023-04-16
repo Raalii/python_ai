@@ -10,6 +10,7 @@ class CameraStream:
         self.stopped = False
         self.polygons = polygons
         self.id = id
+        self.url = url
     
 
     def start(self):

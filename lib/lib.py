@@ -1,8 +1,10 @@
 import os
 import time
 
+from threading import Thread
 from dotenv import load_dotenv
 from twilio.rest import Client
+from time import sleep
 
 load_dotenv()
 
@@ -36,7 +38,7 @@ class Lib():
         except:
             pass
 
-        
+    @staticmethod    
     def convert_polygons(data):
         converted_polygons = []
         

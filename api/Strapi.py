@@ -73,17 +73,8 @@ class StrapiClient:
         files = {'files': open(file_path, 'rb')}
         # print(f'file : {files}\nheaders: {headers}')
         response = requests.post(url, headers=headers, files=files)
-        print(response.text)
         response.raise_for_status()
         return response.json()
-
-    def add_video_to_collection(self, collection_id, file_path):
-        upload_response = self.upload(file_path)
-        media_id = upload_response[0]['id']
-        media_response = self.get(f'upload/files/{media_id}')
-        media_url = media_response['url']
-        data = {'video_url': media_url}
-        self.put(f'collection/{collection_id}', data)
         
         
 
