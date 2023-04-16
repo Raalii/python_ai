@@ -131,7 +131,6 @@ class PersonDetector:
                 if self.alert is not None and not self.camera_recorder.recording:
                     self.sound_played = False
                     pygame.mixer.music.stop()
-                    print("\n\n\n\nJE SUIS ICI")
                     new_url = self.api_handler.upload(self.camera_recorder.video_file_path)[0]['url']
                     self.alert.mettre_a_jour_url_camera(new_url)               
                     self.alert = None
