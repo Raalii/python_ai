@@ -125,7 +125,7 @@ class PersonDetector:
                     self.sound_played = True
                     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                     self.alert = Alert(camera_id, timestamp, self.api_handler)
-                    self.alert.lancer_alerte(camera_id, "person_detected", camera_url)
+                    self.alert.lancer_alerte(camera_id, "Foire de Paris_Stand C10 - Caméra 1", camera_url)
 
             else:
                 if self.alert is not None and not self.camera_recorder.recording:

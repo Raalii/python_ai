@@ -12,7 +12,7 @@ class CameraRecorder:
         self.recording = False
         self.lock = Lock()
         self.delay_counter = 0
-        self.delay_seconds = 5
+        self.delay_seconds = 2
         self.api_handler = api_handler
         self.fourcc = cv2.VideoWriter_fourcc(*'x264')
 
